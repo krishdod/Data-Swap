@@ -88,6 +88,7 @@ def write_filled_template(
     *,
     template_sheet_name: str | None = None,
     source_sheet_name: str | None = None,
+    include_audit_sheets: bool = False,
 ) -> bytes:
     """
     mapping format per target header:
@@ -131,17 +132,22 @@ def write_filled_template(
         for col_idx_1based, th in template_col_positions:
             spec = mapping[th]
             mtype = spec.get("type", "")
-            val = ""
+            val: Any = None
             if mtype == "source":
                 src_h = spec.get("value", "")
                 if src_h not in source_index:
                     raise ValueError(f"Mapped source header not found: {src_h}")
                 v = src_row[source_index[src_h]] if source_index[src_h] < len(src_row) else None
-                val = v
+                # Preserve empties as true blanks in Excel.
+                if v is None or (isinstance(v, str) and v.strip() == ""):
+                    val = None
+                else:
+                    val = v
             elif mtype == "constant":
-                val = spec.get("value", "")
+                c = spec.get("value", "")
+                val = None if (c is None or str(c) == "") else c
             elif mtype == "blank":
-                val = ""
+                val = None
             else:
                 raise ValueError(f"Invalid mapping type for '{th}': {mtype}")
 
@@ -149,22 +155,25 @@ def write_filled_template(
 
         out_row += 1
 
-    # Add audit sheets
+    # Always remove these from the output unless explicitly requested.
     if "Mapping" in twb.sheetnames:
         del twb["Mapping"]
     if "Errors" in twb.sheetnames:
         del twb["Errors"]
 
-    ws_map = twb.create_sheet("Mapping")
-    ws_map.append(["Template Header", "Mapping Type", "Source/Constant Value"])
-    for th in template_headers:
-        spec = mapping[th]
-        ws_map.append([th, spec.get("type", ""), spec.get("value", "")])
+    if include_audit_sheets:
+        # Add audit sheets back (explicitly)
 
-    # We don't compute row-level errors yet (strict mapping gate prevents most issues),
-    # but keep the sheet for future validations (types, required columns, etc.).
-    ws_err = twb.create_sheet("Errors")
-    ws_err.append(["Row", "Template Header", "Issue", "Value"])
+        ws_map = twb.create_sheet("Mapping")
+        ws_map.append(["Template Header", "Mapping Type", "Source/Constant Value"])
+        for th in template_headers:
+            spec = mapping[th]
+            ws_map.append([th, spec.get("type", ""), spec.get("value", "")])
+
+        # We don't compute row-level errors yet (strict mapping gate prevents most issues),
+        # but keep the sheet for future validations (types, required columns, etc.).
+        ws_err = twb.create_sheet("Errors")
+        ws_err.append(["Row", "Template Header", "Issue", "Value"])
 
     from io import BytesIO
 
