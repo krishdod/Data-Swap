@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+python-multipart
+jinja2
+openpyxl
+starlette<1.0.0
+

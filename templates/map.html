@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Map Columns • Sheet Updating</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="container wide">
+      <header class="header">
+        <h1>Map columns</h1>
+        <p class="subtle">
+          Template columns must be fully mapped (or explicitly blank/constant) before export.
+        </p>
+      </header>
+
+      <section class="appbar card">
+        <div class="appbarLeft">
+          <div class="pills">
+            <span class="pill">Source.xlsx uploaded</span>
+            <span class="pill">Template.xlsx uploaded</span>
+          </div>
+          <div id="status" class="status subtle"></div>
+        </div>
+        <div class="appbarRight">
+          <button id="swapBtn" class="btn" type="button">Swap Source &amp; Template</button>
+          <button id="exportBtn" class="btn primary" disabled>Export filled template</button>
+          <a class="btn" href="/">Start over</a>
+        </div>
+      </section>
+
+      <section class="mapper card" id="mapperDesktop">
+        <div class="panel">
+          <div class="panelHeader">
+            <h2>Source Sheet</h2>
+            <p class="subtle">Columns detected: <strong><span id="sourceCount"></span></strong></p>
+          </div>
+          <div id="sourceList" class="sourceList"></div>
+        </div>
+
+        <div class="bridge" aria-hidden="true">
+          <svg id="bridgeSvg" class="bridgeSvg"></svg>
+          <div class="bridgeHint subtle">Drag your eyes across the bridge to verify every mapping.</div>
+        </div>
+
+        <div class="panel">
+          <div class="panelHeader">
+            <h2>Target Sheet</h2>
+            <p class="subtle">Template columns: <strong><span id="templateCount"></span></strong></p>
+          </div>
+          <div id="mapping" class="targetList"></div>
+        </div>
+      </section>
+
+      <section class="wizard card hidden" id="mapperWizard">
+        <div class="wizardHeader">
+          <div>
+            <h2>Map one column</h2>
+            <p class="subtle">Mobile mode: map step-by-step to avoid clutter.</p>
+          </div>
+          <div class="wizardProgress subtle"><span id="wizPos"></span> / <span id="wizTotal"></span></div>
+        </div>
+        <div id="wizardBody"></div>
+        <div class="actions">
+          <button id="wizBack" class="btn" type="button">Back</button>
+          <button id="wizNext" class="btn" type="button">Next</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Preview (first rows)</h2>
+        <p class="subtle">
+          Source rows: <strong><span id="rowCount"></span></strong>. Preview shows the first 20 rows.
+        </p>
+        <div class="tableWrap">
+          <table id="previewTable"></table>
+        </div>
+      </section>
+
+      <form id="exportForm" action="/export" method="post" class="hidden">
+        <input type="hidden" name="payload" id="payloadInput" />
+        <input type="hidden" name="mapping_json" id="mappingInput" />
+      </form>
+
+      <form id="swapForm" action="/swap" method="post" class="hidden">
+        <input type="hidden" name="payload" id="swapPayloadInput" />
+      </form>
+    </main>
+
+    <script>
+      window.__PAYLOAD__ = {{ payload_json | safe }};
+    </script>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
+

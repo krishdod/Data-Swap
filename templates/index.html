@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sheet Updating</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="header">
+        <h1>Sheet Updating</h1>
+        <p class="subtle">
+          Upload a <strong>Source.xlsx</strong> (data) and a <strong>Template.xlsx</strong> (headers only),
+          map columns, then download a new filled template.
+        </p>
+      </header>
+
+      <section class="card">
+        <form action="/upload" method="post" enctype="multipart/form-data" class="form">
+          <label class="field">
+            <span>Source Excel (has data)</span>
+            <input type="file" name="source_file" accept=".xlsx" required />
+          </label>
+          <label class="field">
+            <span>Template Excel (only header row)</span>
+            <input type="file" name="template_file" accept=".xlsx" required />
+          </label>
+
+          <button type="submit" class="btn primary">Next: Map columns</button>
+        </form>
+      </section>
+
+      <footer class="footer subtle">
+        Precision rules: nothing exports unless every template column is mapped (or explicitly blank/constant).
+      </footer>
+    </main>
+  </body>
+</html>
+
