@@ -24,6 +24,7 @@ templates = Jinja2Templates(directory=str(ROOT / "templates"))
 app.mount("/static", StaticFiles(directory=str(ROOT / "static")), name="static")
 
 MAX_SUGGESTION_COMPARISONS = 50_000
+ASSET_VERSION = os.getenv("RENDER_GIT_COMMIT") or str(uuid.uuid4())
 
 
 def _save_upload(f: UploadFile) -> Path:
@@ -92,6 +93,7 @@ def upload(
         {
             "request": request,
             "payload_json": json.dumps(payload),
+            "asset_version": ASSET_VERSION,
         },
     )
 
@@ -127,6 +129,7 @@ def swap(request: Request, payload: str = Form(...)) -> Any:
         {
             "request": request,
             "payload_json": json.dumps(new_payload),
+            "asset_version": ASSET_VERSION,
         },
     )
 
