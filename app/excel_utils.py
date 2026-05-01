@@ -138,9 +138,9 @@ def write_filled_template(
     mapping format per target header:
       { "type": "source"|"constant"|"blank", "value": <source header or constant> }
     """
-    # CSV inputs/outputs and very large row counts use streaming mode for scale.
-    # This keeps output deterministic while scaling to big files.
-    if _is_csv(template_path) or _is_csv(source_path) or source_row_count_hint >= 50_000:
+    # Use streaming mode for CSV paths only.
+    # For XLSX templates, keep normal mode to preserve workbook layout/styles.
+    if _is_csv(template_path) or _is_csv(source_path):
         return _write_filled_template_streaming(
             template_path=template_path,
             source_path=source_path,

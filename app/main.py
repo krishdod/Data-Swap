@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -25,6 +25,17 @@ app.mount("/static", StaticFiles(directory=str(ROOT / "static")), name="static")
 
 MAX_SUGGESTION_COMPARISONS = 50_000
 ASSET_VERSION = os.getenv("RENDER_GIT_COMMIT") or str(uuid.uuid4())
+
+
+@app.middleware("http")
+async def disable_stale_cache(request: Request, call_next: Any) -> Any:
+    response = await call_next(request)
+    content_type = response.headers.get("content-type", "")
+    if request.url.path.startswith("/static/") or content_type.startswith("text/html"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 
 def _save_upload(f: UploadFile) -> Path:
@@ -180,4 +191,10 @@ def export(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers=headers,
     )
+
+
+@app.get("/export")
+def export_get() -> RedirectResponse:
+    # Some clients accidentally GET this endpoint; send them back to home.
+    return RedirectResponse(url="/", status_code=303)
 
