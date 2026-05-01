@@ -11,7 +11,7 @@
       <header class="header">
         <h1>Sheet Updating</h1>
         <p class="subtle">
-          Upload a <strong>Source.xlsx</strong> (data) and a <strong>Template.xlsx</strong> (headers only),
+          Upload a <strong>Source (.xlsx/.csv)</strong> (data) and a <strong>Template (.xlsx/.csv)</strong> (headers only),
           map columns, then download a new filled template.
         </p>
       </header>
@@ -19,12 +19,12 @@
       <section class="card">
         <form action="/upload" method="post" enctype="multipart/form-data" class="form">
           <label class="field">
-            <span>Source Excel (has data)</span>
-            <input type="file" name="source_file" accept=".xlsx" required />
+            <span>Source file (Excel/CSV, has data)</span>
+            <input type="file" name="source_file" accept=".xlsx,.csv,text/csv" required />
           </label>
           <label class="field">
-            <span>Template Excel (only header row)</span>
-            <input type="file" name="template_file" accept=".xlsx" required />
+            <span>Template file (Excel/CSV, header row)</span>
+            <input type="file" name="template_file" accept=".xlsx,.csv,text/csv" required />
           </label>
 
           <button type="submit" class="btn primary">Next: Map columns</button>

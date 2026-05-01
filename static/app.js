@@ -126,10 +126,9 @@
 
     const typeSel = document.createElement("select");
     typeSel.innerHTML = `
-      <option value="">Choose…</option>
+      <option value="blank">Blank</option>
       <option value="source">Source column</option>
       <option value="constant">Constant value</option>
-      <option value="blank">Blank</option>
     `;
 
     const valueInput = document.createElement("input");
@@ -206,13 +205,12 @@
       refreshGate();
     });
 
-    // Preselect best suggestion if strong.
-    if (best && best.score >= 0.62) {
-      typeSel.value = "source";
-      valueInput.value = best.source;
-      state.mapping[th] = { type: "source", value: best.source };
-      setBadgeFromSpec();
-    }
+    // Default every target mapping to Blank.
+    typeSel.value = "blank";
+    state.mapping[th] = { type: "blank", value: "" };
+    valueInput.value = "";
+    valueInput.placeholder = "Blank (no value)";
+    setBadgeFromSpec();
 
     controls.appendChild(typeSel);
     controls.appendChild(valueInput);

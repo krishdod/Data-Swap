@@ -23,6 +23,8 @@ app = FastAPI(title="Sheet Updating")
 templates = Jinja2Templates(directory=str(ROOT / "templates"))
 app.mount("/static", StaticFiles(directory=str(ROOT / "static")), name="static")
 
+MAX_SUGGESTION_COMPARISONS = 50_000
+
 
 def _save_upload(f: UploadFile) -> Path:
     file_id = str(uuid.uuid4())
@@ -35,6 +37,24 @@ def _save_upload(f: UploadFile) -> Path:
                 break
             w.write(chunk)
     return out
+
+
+def _build_suggestions(source_headers: list[str], template_headers: list[str]) -> dict[str, list[dict[str, Any]]]:
+    """
+    Build top-3 suggestions unless header counts are too large.
+    This keeps upload responsive for very wide files.
+    """
+    comparisons = len(source_headers) * len(template_headers)
+    if comparisons > MAX_SUGGESTION_COMPARISONS:
+        return {th: [] for th in template_headers}
+
+    suggestions: dict[str, list[dict[str, Any]]] = {}
+    for th in template_headers:
+        suggestions[th] = [
+            {"source": s.source_header, "score": round(s.score, 3)}
+            for s in suggest_sources_for_target(th, source_headers, top_k=3)
+        ]
+    return suggestions
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -54,13 +74,7 @@ def upload(
     source_preview = read_source_preview_xlsx(str(source_path))
     template_headers = read_headers_xlsx(str(template_path))
 
-    # Suggestions per template header (top-3).
-    suggestions: dict[str, list[dict[str, Any]]] = {}
-    for th in template_headers:
-        suggestions[th] = [
-            {"source": s.source_header, "score": round(s.score, 3)}
-            for s in suggest_sources_for_target(th, source_preview.headers, top_k=3)
-        ]
+    suggestions = _build_suggestions(source_preview.headers, template_headers)
 
     payload = {
         "source": {
@@ -85,7 +99,7 @@ def upload(
 @app.post("/swap", response_class=HTMLResponse)
 def swap(request: Request, payload: str = Form(...)) -> Any:
     """
-    Swap Source.xlsx and Template.xlsx roles if user uploaded them incorrectly.
+    Swap source/template roles if user uploaded them incorrectly.
     Re-extract preview/headers and regenerate suggestions.
     """
     data = json.loads(payload)
@@ -95,12 +109,7 @@ def swap(request: Request, payload: str = Form(...)) -> Any:
     source_preview = read_source_preview_xlsx(str(source_path))
     template_headers = read_headers_xlsx(str(template_path))
 
-    suggestions: dict[str, list[dict[str, Any]]] = {}
-    for th in template_headers:
-        suggestions[th] = [
-            {"source": s.source_header, "score": round(s.score, 3)}
-            for s in suggest_sources_for_target(th, source_preview.headers, top_k=3)
-        ]
+    suggestions = _build_suggestions(source_preview.headers, template_headers)
 
     new_payload = {
         "source": {
@@ -155,6 +164,7 @@ def export(
         template_path=template_path,
         source_path=source_path,
         mapping=mapping,
+        source_row_count_hint=int(data.get("source", {}).get("row_count") or 0),
     )
 
     filename = "filled_template.xlsx"
