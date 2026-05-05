@@ -56,6 +56,7 @@
       const spec = state.mapping[th];
       if (!spec || !spec.type) missing.push(th);
       else if (spec.type === "source" && !spec.value) missing.push(th);
+      else if (spec.type === "generated_handle" && !spec.value) missing.push(th);
       else if (spec.type === "constant" && spec.value === undefined) missing.push(th);
       else if (spec.type === "blank") {
         // ok
@@ -128,6 +129,7 @@
     typeSel.innerHTML = `
       <option value="blank">Blank</option>
       <option value="source">Source column</option>
+      <option value="generated_handle">Generate handle from source</option>
       <option value="constant">Constant value</option>
     `;
 
@@ -156,6 +158,7 @@
       }
       b.className = "badge mapped";
       if (spec.type === "source") b.textContent = "Mapped";
+      else if (spec.type === "generated_handle") b.textContent = "Generated";
       else if (spec.type === "constant") b.textContent = "Constant";
       else if (spec.type === "blank") b.textContent = "Blank";
       else b.textContent = "Mapped";
@@ -174,6 +177,9 @@
       } else if (t === "constant") {
         state.mapping[th] = { type: "constant", value: valueInput.value || "" };
         valueInput.placeholder = "Enter constant value…";
+      } else if (t === "generated_handle") {
+        state.mapping[th] = { type: "generated_handle", value: valueInput.value || "" };
+        valueInput.placeholder = "Pick source column (e.g. Title)…";
       } else if (t === "source") {
         state.mapping[th] = { type: "source", value: valueInput.value || "" };
         valueInput.placeholder = "Search source column…";
@@ -191,9 +197,13 @@
       const spec = state.mapping[th];
       if (typeSel.value === "constant") {
         state.mapping[th] = { type: "constant", value: valueInput.value || "" };
+      } else if (typeSel.value === "generated_handle") {
+        state.mapping[th] = { type: "generated_handle", value: valueInput.value || "" };
       } else if (typeSel.value === "source") {
         state.mapping[th] = { type: "source", value: valueInput.value || "" };
       } else if (spec && spec.type === "constant") {
+        spec.value = valueInput.value || "";
+      } else if (spec && spec.type === "generated_handle") {
         spec.value = valueInput.value || "";
       }
       setBadgeFromSpec();
@@ -210,6 +220,18 @@
     state.mapping[th] = { type: "blank", value: "" };
     valueInput.value = "";
     valueInput.placeholder = "Blank (no value)";
+
+    // If target is "handle", preselect generated handle using a title-like source column.
+    const looksLikeHandle = normalizeHeader(th) === "handle";
+    if (looksLikeHandle) {
+      const titleHeader = findTitleLikeSourceHeader();
+      if (titleHeader) {
+        typeSel.value = "generated_handle";
+        valueInput.value = titleHeader;
+        state.mapping[th] = { type: "generated_handle", value: titleHeader };
+        valueInput.placeholder = "Pick source column (e.g. Title)…";
+      }
+    }
     setBadgeFromSpec();
 
     controls.appendChild(typeSel);
@@ -459,6 +481,25 @@
     let h = 0;
     for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
     return String(h);
+  }
+
+  function normalizeHeader(s) {
+    return String(s || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  function findTitleLikeSourceHeader() {
+    const candidates = new Set(["title", "product title", "name", "product name"]);
+    for (const sh of sourceHeaders) {
+      if (candidates.has(normalizeHeader(sh))) return sh;
+    }
+    for (const sh of sourceHeaders) {
+      if (normalizeHeader(sh).includes("title")) return sh;
+    }
+    return "";
   }
 
   renderSourceList();

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import re
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Any
@@ -42,6 +43,26 @@ def _trim_source_headers(raw_headers: list[str]) -> list[str]:
     headers = raw_headers[:last_idx] if last_idx else []
     headers = [h for h in headers if h != ""]
     return headers
+
+
+_HANDLE_NON_ALNUM = re.compile(r"[^a-z0-9]+")
+
+
+def _slugify_handle(v: Any) -> str:
+    s = _cell_to_str(v).lower()
+    s = _HANDLE_NON_ALNUM.sub("-", s).strip("-")
+    return s or "item"
+
+
+def _unique_handle(v: Any, seen: set[str]) -> str:
+    base = _slugify_handle(v)
+    candidate = base
+    n = 2
+    while candidate in seen:
+        candidate = f"{base}-{n}"
+        n += 1
+    seen.add(candidate)
+    return candidate
 
 
 def read_headers_xlsx(path: str, sheet_name: str | None = None) -> list[str]:
@@ -136,7 +157,7 @@ def write_filled_template(
 ) -> bytes:
     """
     mapping format per target header:
-      { "type": "source"|"constant"|"blank", "value": <source header or constant> }
+      { "type": "source"|"constant"|"blank"|"generated_handle", "value": <source header or constant> }
     """
     # Use streaming mode for CSV paths only.
     # For XLSX templates, keep normal mode to preserve workbook layout/styles.
@@ -182,6 +203,7 @@ def write_filled_template(
         if h != "":
             template_col_positions.append((col_idx_1based, h))
 
+    generated_handle_seen: set[str] = set()
     out_row = 2
     for src_row in sws.iter_rows(min_row=2, max_col=len(source_headers), values_only=True):
         # For each template column, write deterministically.
@@ -204,6 +226,12 @@ def write_filled_template(
                 val = None if (c is None or str(c) == "") else c
             elif mtype == "blank":
                 val = None
+            elif mtype == "generated_handle":
+                src_h = spec.get("value", "")
+                if src_h not in source_index:
+                    raise ValueError(f"Mapped source header not found for generated handle: {src_h}")
+                v = src_row[source_index[src_h]] if source_index[src_h] < len(src_row) else None
+                val = _unique_handle(v, generated_handle_seen)
             else:
                 raise ValueError(f"Invalid mapping type for '{th}': {mtype}")
 
@@ -295,6 +323,7 @@ def _write_filled_template_streaming(
     # Keep template row-1 structure exactly (including blank header slots).
     out_ws.append(template_headers_full)
 
+    generated_handle_seen: set[str] = set()
     target_width = len(template_headers_full)
     for src_row_raw in source_rows:
         src_row = [_cell_to_str(v) for v in src_row_raw[: len(source_headers)]]
@@ -319,6 +348,12 @@ def _write_filled_template_streaming(
                 val = None if (c is None or str(c) == "") else c
             elif mtype == "blank":
                 val = None
+            elif mtype == "generated_handle":
+                src_h = spec.get("value", "")
+                if src_h not in source_index:
+                    raise ValueError(f"Mapped source header not found for generated handle: {src_h}")
+                v = src_row[source_index[src_h]] if source_index[src_h] < len(src_row) else ""
+                val = _unique_handle(v, generated_handle_seen)
             else:
                 raise ValueError(f"Invalid mapping type for '{th}': {mtype}")
 

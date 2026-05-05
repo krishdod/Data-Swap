@@ -167,7 +167,7 @@ def export(
         )
     for h in template_headers:
         spec = mapping.get(h, {})
-        if spec.get("type") not in {"source", "constant", "blank"}:
+        if spec.get("type") not in {"source", "constant", "blank", "generated_handle"}:
             return Response(
                 content=f"Invalid mapping type for '{h}'".encode("utf-8"),
                 media_type="text/plain",
