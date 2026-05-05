@@ -164,6 +164,32 @@
       else b.textContent = "Mapped";
     }
 
+    function hydrateControlsFromSpec(spec) {
+      if (!spec || !spec.type) {
+        typeSel.value = "blank";
+        valueInput.value = "";
+        valueInput.placeholder = "Blank (no value)";
+        return;
+      }
+      if (spec.type === "blank") {
+        typeSel.value = "blank";
+        valueInput.value = "";
+        valueInput.placeholder = "Blank (no value)";
+      } else if (spec.type === "source") {
+        typeSel.value = "source";
+        valueInput.value = spec.value || "";
+        valueInput.placeholder = "Search source column…";
+      } else if (spec.type === "constant") {
+        typeSel.value = "constant";
+        valueInput.value = spec.value || "";
+        valueInput.placeholder = "Enter constant value…";
+      } else if (spec.type === "generated_handle") {
+        typeSel.value = "generated_handle";
+        valueInput.value = spec.value || "";
+        valueInput.placeholder = "Pick source column (e.g. Title)…";
+      }
+    }
+
     function apply() {
       const t = typeSel.value;
       if (!t) {
@@ -215,22 +241,22 @@
       refreshGate();
     });
 
-    // Default every target mapping to Blank.
-    typeSel.value = "blank";
-    state.mapping[th] = { type: "blank", value: "" };
-    valueInput.value = "";
-    valueInput.placeholder = "Blank (no value)";
+    const existingSpec = state.mapping[th];
+    if (existingSpec && existingSpec.type) {
+      hydrateControlsFromSpec(existingSpec);
+    } else {
+      // Default every target mapping to Blank.
+      state.mapping[th] = { type: "blank", value: "" };
 
-    // If target is "handle", preselect generated handle using a title-like source column.
-    const looksLikeHandle = normalizeHeader(th) === "handle";
-    if (looksLikeHandle) {
-      const titleHeader = findTitleLikeSourceHeader();
-      if (titleHeader) {
-        typeSel.value = "generated_handle";
-        valueInput.value = titleHeader;
-        state.mapping[th] = { type: "generated_handle", value: titleHeader };
-        valueInput.placeholder = "Pick source column (e.g. Title)…";
+      // If target is "handle", preselect generated handle using a title-like source column.
+      const looksLikeHandle = normalizeHeader(th) === "handle";
+      if (looksLikeHandle) {
+        const titleHeader = findTitleLikeSourceHeader();
+        if (titleHeader) {
+          state.mapping[th] = { type: "generated_handle", value: titleHeader };
+        }
       }
+      hydrateControlsFromSpec(state.mapping[th]);
     }
     setBadgeFromSpec();
 
