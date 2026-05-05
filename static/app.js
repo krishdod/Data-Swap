@@ -47,7 +47,7 @@
   }
 
   function isMobileWizard() {
-    return window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+    return window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
   }
 
   function computeCompleteness() {

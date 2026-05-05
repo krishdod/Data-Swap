@@ -15,7 +15,7 @@ Open PowerShell in this folder and run:
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
 Then open `http://127.0.0.1:8000`.
@@ -24,4 +24,11 @@ Then open `http://127.0.0.1:8000`.
 
 - The app is **deterministic**: it never drops rows, and it never writes anything unless every template column is mapped (or explicitly set to blank/constant).
 - “AI suggestions” are local heuristic suggestions (no internet / no external model by default). You can later plug in an LLM if you want.
+
+### Deploy on Render
+
+- **Build Command:** `pip install -r requirements.txt`
+- **Start Command:** `python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+If your source sheet has no `handle` column, map template `handle` to **Generate handle from source** and pick your title-like source field.
 

@@ -29,6 +29,13 @@ body {
 .container.wide {
   width: min(1200px, calc(100% - 32px));
 }
+@media (max-width: 640px) {
+  .container,
+  .container.wide {
+    width: calc(100% - 20px);
+    margin: 16px auto;
+  }
+}
 
 .header h1 {
   margin: 0 0 8px;
@@ -66,6 +73,24 @@ body {
   gap: 10px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+@media (max-width: 900px) {
+  .appbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .appbarRight {
+    justify-content: stretch;
+  }
+  .appbarRight .btn {
+    flex: 1 1 180px;
+  }
+}
+@media (max-width: 640px) {
+  .appbarRight .btn {
+    width: 100%;
+    min-height: 42px;
+  }
 }
 .pills {
   display: flex;
@@ -182,6 +207,12 @@ body {
   gap: 12px;
   margin-bottom: 10px;
 }
+@media (max-width: 640px) {
+  .panelHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 .panelHeader h2 {
   margin: 0;
   font-size: 16px;
@@ -286,6 +317,12 @@ body {
   background: rgba(0, 0, 0, 0.18);
   color: var(--text);
 }
+@media (max-width: 640px) {
+  .controls select,
+  .controls input[type="text"] {
+    min-height: 42px;
+  }
+}
 .hint {
   font-size: 12px;
   margin-top: 6px;
@@ -331,6 +368,11 @@ body {
 .wizardProgress {
   margin-top: 3px;
   font-weight: 800;
+}
+@media (max-width: 640px) {
+  .wizardHeader {
+    flex-direction: column;
+  }
 }
 
 .wizardRow {
